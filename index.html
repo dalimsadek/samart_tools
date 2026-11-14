@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAM'ART — Outils</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,700;1,400&family=Lato:wght@300;400;700&display=swap">
+<link rel="stylesheet" href="assets/shared.css">
+<style>
+  /* Hub override — fond clair pour que le logo noir soit lisible */
+  html, body { background: #f0ebe1; }
+
+  .hub {
+    background: #f0ebe1;
+  }
+  .hub-subtitle {
+    color: #9a9185;
+  }
+  .hub-card {
+    background: #fff9f4;
+    border-color: rgba(185,165,125,0.25);
+    color: #2a2420;
+  }
+  .hub-card:hover {
+    border-color: #c9a96e;
+    background: #fff;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+  }
+  .hub-card-name {
+    color: #b5a07a;
+  }
+  .hub-card-desc {
+    color: #7a7268;
+  }
+
+  /* Ligne décorative sous le logo */
+  .hub-divider {
+    width: 48px;
+    height: 1px;
+    background: #c9a96e;
+    margin: 0 auto 14px;
+    opacity: 0.6;
+  }
+</style>
+</head>
+<body>
+
+<div class="hub">
+  <img src="samar-interiot_logo.png" class="hub-logo" alt="SAM'ART">
+  <div class="hub-divider"></div>
+  <p class="hub-subtitle">Outils internes</p>
+
+  <div class="hub-tools">
+    <a class="hub-card" href="devis.html">
+      <div class="hub-card-icon">📄</div>
+      <div class="hub-card-name">Devis</div>
+      <div class="hub-card-desc">Créez et exportez vos devis clients en PDF, PNG ou JPG.</div>
+    </a>
+    <a class="hub-card" href="facture.html">
+      <div class="hub-card-icon">🧾</div>
+      <div class="hub-card-name">Facture</div>
+      <div class="hub-card-desc">Générez vos factures, pré-remplies depuis un devis existant.</div>
+    </a>
+  </div>
+</div>
+
+</body>
+</html>

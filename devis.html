@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Devis — SAM'ART</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,700;1,400&family=Lato:wght@300;400;700;900&family=Dancing+Script:wght@500&display=swap">
+<link rel="stylesheet" href="assets/shared.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── Topbar ──────────────────────────────────────────── -->
+  <header class="topbar">
+    <a href="index.html"><img src="samar-interiot_logo.png" class="topbar-logo" alt="SAM'ART"></a>
+    <div class="topbar-sep"></div>
+    <nav class="tool-nav">
+      <a class="tool-tab active" href="devis.html">Devis</a>
+      <a class="tool-tab" href="facture.html">Facture</a>
+    </nav>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" onclick="nouveau()">Nouveau</button>
+      <button class="btn btn-cta" onclick="goToFacture()">→ Facture</button>
+      <div class="export-group">
+        <button class="btn btn-primary" onclick="exportPDF()">PDF</button>
+        <button class="btn btn-ghost" onclick="exportImg('png')">PNG</button>
+        <button class="btn btn-ghost" onclick="exportImg('jpg')">JPG</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Sidebar ─────────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <div class="form-section">
+      <div class="section-label">Informations devis</div>
+      <div class="cols-2">
+        <div class="field">
+          <label>N° Devis</label>
+          <input type="text" id="f-num" placeholder="011126">
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="f-date">
+        </div>
+      </div>
+      <div class="cols-2">
+        <div class="field">
+          <label>Validité</label>
+          <input type="text" id="f-validite" placeholder="2 mois">
+        </div>
+        <div class="field">
+          <label>Devise</label>
+          <select id="f-devise" onchange="render()">
+            <option value="EUR">EUR (€)</option>
+            <option value="DT">DT (Dinar)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="section-label">Client</div>
+      <div class="field">
+        <label>Nom / Société</label>
+        <input type="text" id="c-nom" placeholder="Mme Dupont" oninput="render()">
+      </div>
+      <div class="field">
+        <label>Adresse</label>
+        <input type="text" id="c-adresse" placeholder="12 rue des Fleurs" oninput="render()">
+      </div>
+      <div class="cols-2">
+        <div class="field">
+          <label>Ville</label>
+          <input type="text" id="c-ville" placeholder="Paris" oninput="render()">
+        </div>
+        <div class="field">
+          <label>Code postal</label>
+          <input type="text" id="c-cp" placeholder="75001" oninput="render()">
+        </div>
+      </div>
+      <div class="field">
+        <label>Téléphone</label>
+        <input type="tel" id="c-phone" placeholder="+33 6 00 00 00 00" oninput="render()">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="c-email" placeholder="client@email.com" oninput="render()">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="section-label">Prestations</div>
+      <div class="items-header">
+        <span>Description</span><span style="text-align:center">Qté</span><span style="text-align:right">Prix unit.</span><span></span>
+      </div>
+      <div id="items-container"></div>
+      <button class="btn-add-row" onclick="addRow()">+ Ajouter une ligne</button>
+    </div>
+
+    <div class="form-section">
+      <div class="section-label">Conditions</div>
+      <div class="field">
+        <label>Acompte (%)</label>
+        <input type="number" id="f-acompte" value="30" min="0" max="100" oninput="render()">
+      </div>
+      <div class="field">
+        <label>Délai d'exécution</label>
+        <input type="text" id="f-delai" placeholder="1 mois à compter de l'acompte" oninput="render()">
+      </div>
+      <div class="field">
+        <label>Notes / Remarques</label>
+        <textarea id="f-notes" rows="3" placeholder="Informations complémentaires…" oninput="render()"></textarea>
+      </div>
+      <div class="summary-box">
+        Total : <span id="s-total">—</span> &nbsp;|&nbsp; Acompte : <span id="s-acompte">—</span>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── Aperçu document ────────────────────────────────── -->
+  <main class="main">
+    <div class="doc-page" id="doc-preview"></div>
+  </main>
+
+</div>
+
+<script src="assets/shared.js"></script>
+<script>
+let rows = [
+  { desc: "", qty: 1, pu: 0 },
+  { desc: "", qty: 1, pu: 0 },
+];
+
+function init() {
+  document.getElementById("f-num").value      = nextDocNumber("sam_devis_seq");
+  document.getElementById("f-date").value     = todayISO();
+  document.getElementById("f-validite").value = SAM.docs.validite;
+  document.getElementById("f-delai").value    = SAM.docs.delai;
+  document.getElementById("f-acompte").value  = SAM.docs.acompte_pct;
+  renderRows();
+  render();
+  ["f-num","f-date","f-validite","f-devise","f-acompte","f-delai","f-notes"].forEach(id => {
+    document.getElementById(id).addEventListener("input", render);
+    document.getElementById(id).addEventListener("change", render);
+  });
+}
+
+function renderRows() {
+  document.getElementById("items-container").innerHTML = rows.map((r, i) => `
+    <div class="item-row">
+      <input type="text"   value="${esc(r.desc)}" placeholder="Prestation…"
+             oninput="rows[${i}].desc=this.value;render()">
+      <input type="number" value="${r.qty}" min="0" step="0.5"
+             oninput="rows[${i}].qty=parseFloat(this.value)||0;render()">
+      <input type="number" value="${r.pu}"  min="0" step="10"
+             oninput="rows[${i}].pu=parseFloat(this.value)||0;render()">
+      <button class="btn-remove" onclick="removeRow(${i})" title="Supprimer">×</button>
+    </div>`).join("");
+}
+
+function addRow()      { rows.push({ desc: "", qty: 1, pu: 0 }); renderRows(); render(); }
+function removeRow(i)  { rows.splice(i, 1); if (!rows.length) rows.push({ desc: "", qty: 1, pu: 0 }); renderRows(); render(); }
+
+function totals() {
+  const total   = rows.reduce((s, r) => s + r.qty * r.pu, 0);
+  const pct     = parseFloat(document.getElementById("f-acompte").value) || 0;
+  const acompte = total * pct / 100;
+  return { total, acompte, reste: total - acompte, pct };
+}
+
+function render() {
+  const cur    = document.getElementById("f-devise").value;
+  const num    = document.getElementById("f-num").value     || "—";
+  const date   = document.getElementById("f-date").value;
+  const val    = document.getElementById("f-validite").value || SAM.docs.validite;
+  const delai  = document.getElementById("f-delai").value;
+  const notes  = document.getElementById("f-notes").value;
+  const cNom   = document.getElementById("c-nom").value;
+  const cAdr   = document.getElementById("c-adresse").value;
+  const cVille = document.getElementById("c-ville").value;
+  const cCp    = document.getElementById("c-cp").value;
+  const cPhone = document.getElementById("c-phone").value;
+  const cEmail = document.getElementById("c-email").value;
+  const { total, acompte, reste, pct } = totals();
+  const bank   = SAM.banks[cur];
+
+  document.getElementById("s-total").textContent   = fmt(total,   cur);
+  document.getElementById("s-acompte").textContent = fmt(acompte, cur);
+
+  const bodyRows = rows.map(r => `<tr>
+    <td>${esc(r.desc) || '<span style="color:#aaa">—</span>'}</td>
+    <td class="td-c">${r.qty}</td>
+    <td class="td-r">${fmt(r.pu,     cur)}</td>
+    <td class="td-r">${fmt(r.qty*r.pu, cur)}</td>
+  </tr>`).join("");
+
+  const bankHTML = cur === "DT" ? `
+    <p class="d-bank-intro">Virement bancaire — Coordonnées :</p>
+    <div class="d-bank">
+      <strong>Titulaire :</strong> ${esc(bank.titulaire)}<br>
+      <strong>Banque :</strong> ${esc(bank.banque)}<br>
+      <strong>RIB :</strong> ${esc(bank.iban)}
+    </div>` : `
+    <p class="d-bank-intro">Virement bancaire — Coordonnées :</p>
+    <div class="d-bank">
+      <strong>Titulaire :</strong> ${esc(bank.titulaire)}<br>
+      <strong>IBAN :</strong> ${esc(bank.iban)}<br>
+      <strong>BIC :</strong> ${esc(bank.bic)}
+    </div>`;
+
+  const addrParts = [cAdr, cCp && cVille ? `${cCp} ${cVille}` : (cCp || cVille)].filter(Boolean);
+
+  document.getElementById("doc-preview").innerHTML = `
+    <h1 class="d-doc-title">Devis</h1>
+
+    <div class="d-top-row">
+      <div>
+        <div class="d-client-label">Pour</div>
+        <div class="d-client">
+          ${cNom ? `<div class="cname">${esc(cNom)}</div>` : ""}
+          ${addrParts.map(p => `<div>${esc(p)}</div>`).join("")}
+          ${cPhone ? `<div>${esc(cPhone)}</div>` : ""}
+          ${cEmail ? `<div>${esc(cEmail)}</div>` : ""}
+        </div>
+      </div>
+      <div class="d-date-block">
+        <div><strong>N° :</strong> ${esc(num)}</div>
+        <div><strong>Date :</strong> ${fmtDate(date)}</div>
+        <div><strong>Validité :</strong> ${esc(val)}</div>
+      </div>
+    </div>
+
+    <table class="d-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th class="th-c" style="width:60px">Qté</th>
+          <th class="th-r" style="width:110px">Prix unit.</th>
+          <th class="th-r" style="width:110px">Montant</th>
+        </tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" class="tfoot-label">Total HT</td>
+          <td class="tfoot-val">${fmt(total,   cur)}</td>
+        </tr>
+        <tr>
+          <td colspan="3" class="tfoot-label">Acompte (${pct}%)</td>
+          <td class="tfoot-val">${fmt(acompte, cur)}</td>
+        </tr>
+        <tr>
+          <td colspan="3" class="tfoot-label">Reste à régler</td>
+          <td class="tfoot-val">${fmt(reste,   cur)}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="d-terms">
+      <p>Conditions de règlement :</p>
+      ${pct > 0 ? `Acompte de ${pct}% à la commande, soit ${fmt(acompte, cur)}.<br>` : ""}
+      ${delai ? `Délai d'exécution : ${esc(delai)}.<br>` : ""}
+      ${notes ? `<br>${esc(notes).replace(/\n/g,"<br>")}` : ""}
+    </div>
+
+    ${bankHTML}
+
+    <div class="d-sig-area">
+      <div class="d-sig">
+        <div class="d-merci">Merci !</div>
+        <div class="d-bon">Bon pour accord</div>
+        <div class="d-bon-sub">Signature client précédée de la mention « Lu et approuvé »</div>
+      </div>
+    </div>
+
+    ${buildFooter()}
+  `;
+}
+
+function nouveau() {
+  if (!confirm("Créer un nouveau devis ? Les données actuelles seront effacées.")) return;
+  rows = [{ desc: "", qty: 1, pu: 0 }, { desc: "", qty: 1, pu: 0 }];
+  document.getElementById("f-num").value = nextDocNumber("sam_devis_seq");
+  document.getElementById("f-date").value = todayISO();
+  ["c-nom","c-adresse","c-ville","c-cp","c-phone","c-email","f-notes"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+  renderRows(); render();
+}
+
+function exportPDF() {
+  bumpDocNumber("sam_devis_seq");
+  alert("Pour enregistrer en PDF :\n1. Faites Ctrl+P (ou Cmd+P sur Mac)\n2. Choisissez « Enregistrer au format PDF »\n3. Cliquez Enregistrer");
+}
+
+function exportImg(fmt_) {
+  bumpDocNumber("sam_devis_seq");
+  exportImage("doc-preview", `devis-${document.getElementById("f-num").value || "devis"}`, fmt_);
+}
+
+function goToFacture() {
+  const cur = document.getElementById("f-devise").value;
+  const { total, acompte } = totals();
+  const data = {
+    devisNum:   document.getElementById("f-num").value,
+    date:       document.getElementById("f-date").value,
+    devise:     cur,
+    client: {
+      nom:     document.getElementById("c-nom").value,
+      adresse: document.getElementById("c-adresse").value,
+      ville:   document.getElementById("c-ville").value,
+      cp:      document.getElementById("c-cp").value,
+      phone:   document.getElementById("c-phone").value,
+      email:   document.getElementById("c-email").value,
+    },
+    rows:       rows.map(r => ({ ...r })),
+    total,
+    acompte,
+    acomptePct: parseFloat(document.getElementById("f-acompte").value) || 0,
+    delai:      document.getElementById("f-delai").value,
+    notes:      document.getElementById("f-notes").value,
+  };
+  try { localStorage.setItem("sam_facture_prefill", JSON.stringify(data)); } catch {}
+  window.location.href = "facture.html";
+}
+
+init();
+</script>
+</body>
+</html>
